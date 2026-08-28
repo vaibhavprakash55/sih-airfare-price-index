@@ -101,6 +101,7 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
         "current_index": current_val,
         "change_24h": change_24h,
         "routes_monitored": len(ROUTE_METADATA),
+        "total_scraped_today": total_scraped,
         "total_scraped_quotes": total_scraped,
         "active_anomalies": active_anomalies,
         "base_year": "2024=100",
