@@ -17,26 +17,61 @@ import { fetchRouteTrends } from '@/services/api';
 
 export default function HorizonComparisonChart() {
   const [data, setData] = useState<RouteTrendPoint[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState('DEL-BOM');
+
+  const routes = [
+    'DEL-BOM',
+    'BOM-BLR',
+    'DEL-BLR',
+    'DEL-CCU',
+    'BLR-HYD',
+    'MAA-DEL',
+  ];
 
   useEffect(() => {
     const loadTrends = async () => {
-      const result = await fetchRouteTrends('DEL-BOM');
+      const result = await fetchRouteTrends(selectedRoute);
       setData(result);
     };
 
     loadTrends();
-  }, []);
+  }, [selectedRoute]);
 
   return (
     <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
-      <div className="mb-6">
-        <h2 className="text-xl font-semibold text-white">
-          Booking Horizon Comparison
-        </h2>
+      
+      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div>
+          <h2 className="text-xl font-semibold text-white">
+            Booking Horizon Comparison
+          </h2>
 
-        <p className="mt-1 text-sm text-slate-400">
-          DEL-BOM fare movement across different booking windows
-        </p>
+          <p className="mt-1 text-sm text-slate-400">
+            Fare movement across different booking windows
+          </p>
+        </div>
+
+        <div>
+          <label
+            htmlFor="route"
+            className="mb-2 block text-xs font-medium text-slate-400"
+          >
+            Select Route
+          </label>
+
+          <select
+            id="route"
+            value={selectedRoute}
+            onChange={(event) => setSelectedRoute(event.target.value)}
+            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-white outline-none transition focus:border-slate-500"
+          >
+            {routes.map((route) => (
+              <option key={route} value={route}>
+                {route}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
 
       <div className="h-[350px] w-full">
@@ -58,12 +93,12 @@ export default function HorizonComparisonChart() {
               tickFormatter={(value) => value.slice(5)}
             />
 
-            <YAxis
-              tick={{ fontSize: 11 }}
-            />
+            <YAxis tick={{ fontSize: 11 }} />
 
             <Tooltip
-              formatter={(value) => `₹${Number(value).toLocaleString('en-IN')}`}
+              formatter={(value) =>
+                `₹${Number(value).toLocaleString('en-IN')}`
+              }
             />
 
             <Legend />
