@@ -17,6 +17,7 @@ import { fetchRouteTrends } from '@/services/api';
 
 export default function HorizonComparisonChart() {
   const [data, setData] = useState<RouteTrendPoint[]>([]);
+  const [loading, setLoading] = useState(true);
   const [selectedRoute, setSelectedRoute] = useState('DEL-BOM');
 
   const routes = [
@@ -30,51 +31,41 @@ export default function HorizonComparisonChart() {
 
   useEffect(() => {
     const loadTrends = async () => {
-      const result = await fetchRouteTrends(selectedRoute);
-      setData(result);
-    };
+  setLoading(true);
+
+  const result = await fetchRouteTrends(selectedRoute);
+
+  setData(result);
+  setLoading(false);
+};
 
     loadTrends();
   }, [selectedRoute]);
 
   return (
-    <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
-      
-      <div className="mb-6 flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-xl font-semibold text-white">
-            Booking Horizon Comparison
-          </h2>
+  <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-lg">
+    <div className="mb-6">
+      <h2 className="text-xl font-semibold text-white">
+        Booking Horizon Comparison
+      </h2>
 
-          <p className="mt-1 text-sm text-slate-400">
-            Fare movement across different booking windows
-          </p>
+      <p className="mt-1 text-sm text-slate-400">
+        DEL-BOM fare movement across different booking windows
+      </p>
+    </div>
+
+    <div className="h-[350px] w-full">
+      {loading ? (
+        <div className="flex h-full items-center justify-center">
+          <div className="text-center">
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-white" />
+
+            <p className="mt-3 text-sm text-slate-400">
+              Loading fare data...
+            </p>
+          </div>
         </div>
-
-        <div>
-          <label
-            htmlFor="route"
-            className="mb-2 block text-xs font-medium text-slate-400"
-          >
-            Select Route
-          </label>
-
-          <select
-            id="route"
-            value={selectedRoute}
-            onChange={(event) => setSelectedRoute(event.target.value)}
-            className="rounded-xl border border-slate-700 bg-slate-800 px-4 py-2.5 text-sm font-medium text-white outline-none transition focus:border-slate-500"
-          >
-            {routes.map((route) => (
-              <option key={route} value={route}>
-                {route}
-              </option>
-            ))}
-          </select>
-        </div>
-      </div>
-
-      <div className="h-[350px] w-full">
+      ) : (
         <ResponsiveContainer width="100%" height="100%">
           <LineChart
             data={data}
@@ -93,7 +84,9 @@ export default function HorizonComparisonChart() {
               tickFormatter={(value) => value.slice(5)}
             />
 
-            <YAxis tick={{ fontSize: 11 }} />
+            <YAxis
+              tick={{ fontSize: 11 }}
+            />
 
             <Tooltip
               formatter={(value) =>
@@ -128,7 +121,8 @@ export default function HorizonComparisonChart() {
             />
           </LineChart>
         </ResponsiveContainer>
-      </div>
+      )}
     </div>
-  );
+  </div>
+);
 }
