@@ -39,6 +39,7 @@ export default function HorizonComparisonChart() {
         const result = await fetchRouteTrends(selectedRoute);
         setData(result);
       } catch (error) {
+        setData([]);
         setError('Unable to load fare data. Please try again.');
       } finally {
         setLoading(false);
@@ -100,6 +101,14 @@ export default function HorizonComparisonChart() {
             <div className="text-center">
               <p className="text-sm text-red-400">
                 {error}
+              </p>
+            </div>
+          </div>
+        ) : data.length === 0 ? (
+          <div className="flex h-full items-center justify-center">
+            <div className="text-center">
+              <p className="text-sm text-slate-400">
+                No fare data available for this route.
               </p>
             </div>
           </div>
