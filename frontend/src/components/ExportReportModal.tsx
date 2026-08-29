@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Download, X, FileText } from 'lucide-react';
+import { Download, X, FileText, CheckCircle } from 'lucide-react';
 
 interface ExportReportModalProps {
   isOpen: boolean;
@@ -33,6 +33,40 @@ export default function ExportReportModal({
     setExported(false);
 
     setTimeout(() => {
+      const csvContent = [
+        ['Airfare Price Intelligence Report'],
+        ['Report Type', reportType],
+        ['Time Range', range],
+        [],
+        ['Route', 'Airline', 'Current Fare', 'Surge %', 'Severity'],
+        ['DEL-BOM', 'IndiGo', '5450', '12.5', 'HIGH'],
+        ['BOM-BLR', 'Air India', '6200', '8.4', 'MEDIUM'],
+        ['DEL-BLR', 'IndiGo', '5800', '15.2', 'CRITICAL'],
+        ['BLR-HYD', 'Akasa Air', '4100', '6.8', 'MEDIUM'],
+      ]
+        .map((row) => row.join(','))
+        .join('\n');
+
+      const blob = new Blob([csvContent], {
+        type: 'text/csv;charset=utf-8;',
+      });
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+
+      const fileName = `${reportType
+        .toLowerCase()
+        .replace(/\s+/g, '-')}-${range}.csv`;
+
+      link.href = url;
+      link.download = fileName;
+
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      URL.revokeObjectURL(url);
+
       setExporting(false);
       setExported(true);
     }, 800);
@@ -123,8 +157,9 @@ export default function ExportReportModal({
           </div>
 
           {exported && (
-            <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
-              Report export request prepared successfully.
+            <div className="flex items-center gap-2 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+              <CheckCircle size={18} />
+              <span>Report downloaded successfully.</span>
             </div>
           )}
 
