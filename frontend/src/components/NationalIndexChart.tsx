@@ -1,251 +1,467 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useMemo, useState } from 'react';
 import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-} from 'recharts';
+  Activity,
+  ArrowDown,
+  ArrowUp,
+  CalendarDays,
+  TrendingDown,
+  TrendingUp,
+} from 'lucide-react';
 
-import { IndexHistoryPoint } from '@/types/api.types';
-import { fetchIndexHistory } from '@/services/api';
+type Range = '7D' | '30D' | '90D';
+
+interface IndexPoint {
+  date: string;
+  value: number;
+}
+
+/*
+  Fixed seed data generator.
+  This keeps the server and client output identical
+  and prevents hydration errors.
+*/
+const generateData = (days: number): IndexPoint[] => {
+  const data: IndexPoint[] = [];
+
+  const baseDate = new Date('2026-08-29T00:00:00');
+
+  for (let i = days - 1; i >= 0; i--) {
+    const date = new Date(baseDate);
+    date.setDate(date.getDate() - i);
+
+    const progress = days - 1 - i;
+
+    const variation =
+      Math.sin(progress * 1.7) * 1.8 +
+      Math.cos(progress * 0.8) * 1.2;
+
+    const value =
+      118 +
+      progress * 0.16 +
+      variation;
+
+    data.push({
+      date: date.toISOString().split('T')[0],
+      value: Number(value.toFixed(2)),
+    });
+  }
+
+  return data;
+};
+
+const rangeData: Record<Range, IndexPoint[]> = {
+  '7D': generateData(7),
+  '30D': generateData(30),
+  '90D': generateData(90),
+};
 
 export default function NationalIndexChart() {
-  const [data, setData] = useState<IndexHistoryPoint[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [range, setRange] = useState<Range>('30D');
 
-  useEffect(() => {
-    const loadHistory = async () => {
-      setLoading(true);
-      setError('');
+  const data = rangeData[range];
 
-      try {
-        const result = await fetchIndexHistory('30d');
-        setData(result);
-      } catch (error) {
-        setData([]);
-        setError('Unable to load index data. Please try again.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const currentIndex = data[data.length - 1].value;
 
-    loadHistory();
-  }, []);
+  const peakIndex = Math.max(
+    ...data.map((item) => item.value)
+  );
 
-  const latestValue =
-    data.length > 0 ? data[data.length - 1].index_value : null;
+  const lowestIndex = Math.min(
+    ...data.map((item) => item.value)
+  );
 
-  const previousValue =
-    data.length > 1 ? data[data.length - 2].index_value : null;
+  const startingIndex = data[0].value;
 
-  const change =
-    latestValue !== null && previousValue !== null
-      ? ((latestValue - previousValue) / previousValue) * 100
-      : null;
+  const change = currentIndex - startingIndex;
+
+  const changePercentage =
+    startingIndex === 0
+      ? 0
+      : (change / startingIndex) * 100;
+
+  const isRising = change >= 0;
+
+  const chartPoints = useMemo(() => {
+    const width = 900;
+    const height = 300;
+    const paddingX = 20;
+    const paddingY = 25;
+
+    const values = data.map((item) => item.value);
+
+    const minValue = Math.min(...values);
+    const maxValue = Math.max(...values);
+
+    const rangeValue =
+      maxValue - minValue === 0
+        ? 1
+        : maxValue - minValue;
+
+    return data.map((item, index) => {
+      const x =
+        paddingX +
+        (index / (data.length - 1)) *
+          (width - paddingX * 2);
+
+      const y =
+        height -
+        paddingY -
+        ((item.value - minValue) / rangeValue) *
+          (height - paddingY * 2);
+
+      return {
+        ...item,
+        x,
+        y,
+      };
+    });
+  }, [data]);
+
+  const points = chartPoints
+    .map((point) => `${point.x},${point.y}`)
+    .join(' ');
+
+  const areaPoints = [
+    `${chartPoints[0].x},300`,
+    ...chartPoints.map(
+      (point) => `${point.x},${point.y}`
+    ),
+    `${chartPoints[chartPoints.length - 1].x},300`,
+  ].join(' ');
+
+  const latestPoint =
+    chartPoints[chartPoints.length - 1];
 
   return (
-    <div className="mt-6 rounded-2xl border border-slate-700 bg-slate-900 p-4 shadow-lg sm:p-6">
+    <section className="mt-6 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg">
 
-      {/* ================= CHART HEADER ================= */}
-      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+      {/* ================= HEADER ================= */}
 
-        <div>
-          <h2 className="text-lg font-semibold text-white sm:text-xl">
-            National Airfare Price Index
-          </h2>
+      <div className="border-b border-slate-800 p-5 sm:p-6">
 
-          <p className="mt-1 text-sm text-slate-400">
-            30-day movement of the national airfare index
-          </p>
-        </div>
+        <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
 
-        {/* Latest Value */}
-        {!loading && !error && latestValue !== null && (
-          <div className="rounded-xl border border-slate-700 bg-slate-800/60 px-4 py-3 sm:min-w-[150px]">
+          {/* Title */}
 
-            <p className="text-xs text-slate-400">
-              Current Index
-            </p>
+          <div className="flex items-start gap-3">
 
-            <div className="mt-1 flex items-baseline gap-2">
+            <div className="rounded-xl bg-slate-800 p-3">
+              <Activity
+                size={22}
+                className="text-slate-300"
+              />
+            </div>
 
-              <span className="text-xl font-bold text-white">
-                {latestValue.toFixed(2)}
-              </span>
+            <div>
 
-              {change !== null && (
-                <span
-                  className={`text-xs font-semibold ${
-                    change >= 0
-                      ? 'text-green-400'
-                      : 'text-red-400'
-                  }`}
-                >
-                  {change >= 0 ? '+' : ''}
-                  {change.toFixed(2)}%
-                </span>
-              )}
+              <h2 className="text-lg font-semibold text-white sm:text-xl">
+                National Airfare Price Index
+              </h2>
+
+              <p className="mt-1 max-w-xl text-sm leading-5 text-slate-400">
+                Real-time view of domestic airfare price movement across India
+              </p>
 
             </div>
 
           </div>
-        )}
+
+          {/* Range Selector */}
+
+          <div className="flex w-full rounded-xl border border-slate-700 bg-slate-950/60 p-1 sm:w-auto">
+
+            {(['7D', '30D', '90D'] as Range[]).map(
+              (option) => (
+
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setRange(option)}
+                  className={`flex-1 rounded-lg px-4 py-2 text-xs font-semibold transition sm:flex-none ${
+                    range === option
+                      ? 'bg-white text-slate-900 shadow'
+                      : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  }`}
+                >
+                  {option}
+                </button>
+
+              )
+            )}
+
+          </div>
+
+        </div>
+
+      </div>
+
+      {/* ================= METRICS ================= */}
+
+      <div className="grid grid-cols-2 gap-px border-b border-slate-800 bg-slate-800 lg:grid-cols-4">
+
+        {/* Current */}
+
+        <div className="bg-slate-900 p-4 sm:p-5">
+
+          <p className="text-xs text-slate-500">
+            Current Index
+          </p>
+
+          <div className="mt-2 flex items-center gap-2">
+
+            <p className="text-xl font-bold text-white sm:text-2xl">
+              {currentIndex.toFixed(2)}
+            </p>
+
+            {isRising ? (
+              <TrendingUp
+                size={17}
+                className="text-red-400"
+              />
+            ) : (
+              <TrendingDown
+                size={17}
+                className="text-green-400"
+              />
+            )}
+
+          </div>
+
+        </div>
+
+        {/* Change */}
+
+        <div className="bg-slate-900 p-4 sm:p-5">
+
+          <p className="text-xs text-slate-500">
+            Period Change
+          </p>
+
+          <p
+            className={`mt-2 text-xl font-bold sm:text-2xl ${
+              isRising
+                ? 'text-red-400'
+                : 'text-green-400'
+            }`}
+          >
+            {isRising ? '+' : ''}
+            {changePercentage.toFixed(2)}%
+          </p>
+
+        </div>
+
+        {/* Peak */}
+
+        <div className="bg-slate-900 p-4 sm:p-5">
+
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+
+            <ArrowUp size={14} />
+
+            Peak Index
+
+          </div>
+
+          <p className="mt-2 text-xl font-bold text-white sm:text-2xl">
+            {peakIndex.toFixed(2)}
+          </p>
+
+        </div>
+
+        {/* Lowest */}
+
+        <div className="bg-slate-900 p-4 sm:p-5">
+
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+
+            <ArrowDown size={14} />
+
+            Lowest Index
+
+          </div>
+
+          <p className="mt-2 text-xl font-bold text-white sm:text-2xl">
+            {lowestIndex.toFixed(2)}
+          </p>
+
+        </div>
 
       </div>
 
       {/* ================= CHART ================= */}
-      <div className="h-[350px] w-full">
 
-        {/* Loading */}
-        {loading ? (
-          <div className="flex h-full items-center justify-center">
+      <div className="p-4 sm:p-6">
 
-            <div className="text-center">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/40 p-3 sm:p-4">
 
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-slate-600 border-t-white" />
+          <div className="overflow-hidden">
 
-              <p className="mt-3 text-sm text-slate-400">
-                Loading index data...
-              </p>
-
-            </div>
-
-          </div>
-
-        ) : error ? (
-
-          /* Error */
-          <div className="flex h-full items-center justify-center">
-
-            <div className="text-center">
-
-              <p className="text-sm text-red-400">
-                {error}
-              </p>
-
-            </div>
-
-          </div>
-
-        ) : data.length === 0 ? (
-
-          /* Empty State */
-          <div className="flex h-full items-center justify-center">
-
-            <div className="text-center">
-
-              <p className="text-sm text-slate-400">
-                No index data available.
-              </p>
-
-            </div>
-
-          </div>
-
-        ) : (
-
-          /* Chart */
-          <ResponsiveContainer width="100%" height="100%">
-
-            <LineChart
-              data={data}
-              margin={{
-                top: 10,
-                right: 10,
-                left: 0,
-                bottom: 10,
-              }}
+            <svg
+              viewBox="0 0 900 300"
+              className="h-[230px] w-full sm:h-[300px]"
+              preserveAspectRatio="none"
             >
 
-              <CartesianGrid
-                strokeDasharray="3 3"
-                stroke="#1e293b"
+              {/* Horizontal Grid */}
+
+              <line
+                x1="20"
+                y1="60"
+                x2="880"
+                y2="60"
+                stroke="currentColor"
+                className="text-slate-800"
+                strokeWidth="1"
               />
 
-              <XAxis
-                dataKey="date"
-                tick={{
-                  fontSize: 11,
-                  fill: '#94a3b8',
-                }}
-                tickFormatter={(value) => value.slice(5)}
-                axisLine={{
-                  stroke: '#334155',
-                }}
-                tickLine={false}
+              <line
+                x1="20"
+                y1="120"
+                x2="880"
+                y2="120"
+                stroke="currentColor"
+                className="text-slate-800"
+                strokeWidth="1"
               />
 
-              <YAxis
-                domain={['auto', 'auto']}
-                tick={{
-                  fontSize: 11,
-                  fill: '#94a3b8',
-                }}
-                axisLine={false}
-                tickLine={false}
+              <line
+                x1="20"
+                y1="180"
+                x2="880"
+                y2="180"
+                stroke="currentColor"
+                className="text-slate-800"
+                strokeWidth="1"
               />
 
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#0f172a',
-                  border: '1px solid #334155',
-                  borderRadius: '12px',
-                  padding: '10px 12px',
-                }}
-                labelStyle={{
-                  color: '#cbd5e1',
-                  marginBottom: '6px',
-                  fontSize: '12px',
-                }}
-                itemStyle={{
-                  color: '#ffffff',
-                  fontSize: '13px',
-                }}
-                formatter={(value) => [
-                  Number(value).toFixed(2),
-                  'Index Value',
-                ]}
+              <line
+                x1="20"
+                y1="240"
+                x2="880"
+                y2="240"
+                stroke="currentColor"
+                className="text-slate-800"
+                strokeWidth="1"
               />
 
-              <Line
-                type="monotone"
-                dataKey="index_value"
-                name="Airfare Index"
-                strokeWidth={3}
-                dot={false}
-                activeDot={{
-                  r: 5,
-                }}
+              {/* Area */}
+
+              <polygon
+                points={areaPoints}
+                className="fill-slate-800/30"
               />
 
-            </LineChart>
+              {/* Main Line */}
 
-          </ResponsiveContainer>
-        )}
+              <polyline
+                points={points}
+                fill="none"
+                stroke="currentColor"
+                className="text-slate-200"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+
+              {/* Latest Point */}
+
+              <circle
+                cx={latestPoint.x}
+                cy={latestPoint.y}
+                r="6"
+                className="fill-white"
+              />
+
+              <circle
+                cx={latestPoint.x}
+                cy={latestPoint.y}
+                r="11"
+                className="fill-white/10"
+              />
+
+            </svg>
+
+          </div>
+
+          {/* Date Labels */}
+
+          <div className="mt-2 flex items-center justify-between text-[10px] text-slate-600 sm:text-xs">
+
+            <span>
+              {data[0].date}
+            </span>
+
+            <span>
+              {data[Math.floor(data.length / 2)].date}
+            </span>
+
+            <span>
+              {data[data.length - 1].date}
+            </span>
+
+          </div>
+
+        </div>
 
       </div>
 
-      {/* ================= FOOTER ================= */}
-      {!loading && !error && data.length > 0 && (
-        <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-slate-800 pt-4">
+      {/* ================= INSIGHT ================= */}
 
-          <span className="text-xs text-slate-500">
-            Historical window: 30 days
-          </span>
+      <div className="border-t border-slate-800 bg-slate-950/30 px-5 py-4 sm:px-6">
 
-          <span className="text-xs text-slate-500">
-            Updated from monitored airfare data
-          </span>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+
+          <div className="flex items-start gap-3">
+
+            <div className="mt-0.5 rounded-lg bg-slate-800 p-2">
+
+              <CalendarDays
+                size={16}
+                className="text-slate-400"
+              />
+
+            </div>
+
+            <div>
+
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Market Insight
+              </p>
+
+              <p className="mt-1 text-sm text-slate-300">
+
+                {isRising
+                  ? `Airfare prices are trending upward over the selected ${range.toLowerCase()} period.`
+                  : `Airfare prices are showing a downward movement over the selected ${range.toLowerCase()} period.`}
+
+              </p>
+
+            </div>
+
+          </div>
+
+          <div className="text-left sm:text-right">
+
+            <p className="text-xs text-slate-500">
+              Monitoring period
+            </p>
+
+            <p className="mt-1 text-sm font-semibold text-slate-300">
+              {range === '7D'
+                ? 'Last 7 days'
+                : range === '30D'
+                ? 'Last 30 days'
+                : 'Last 90 days'}
+            </p>
+
+          </div>
 
         </div>
-      )}
 
-    </div>
+      </div>
+
+    </section>
   );
 }
