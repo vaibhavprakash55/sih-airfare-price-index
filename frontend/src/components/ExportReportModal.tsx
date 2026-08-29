@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Download, X, FileText } from 'lucide-react';
 
 interface ExportReportModalProps {
@@ -14,29 +14,47 @@ export default function ExportReportModal({
 }: ExportReportModalProps) {
   const [reportType, setReportType] = useState('CPI Airfare Report');
   const [range, setRange] = useState('30d');
+  const [exporting, setExporting] = useState(false);
+  const [exported, setExported] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setExporting(false);
+      setExported(false);
+    }
+  }, [isOpen]);
 
   if (!isOpen) {
     return null;
   }
 
   const handleExport = () => {
-    alert(
-      `Export requested: ${reportType} for the last ${range}`
-    );
+    setExporting(true);
+    setExported(false);
+
+    setTimeout(() => {
+      setExporting(false);
+      setExported(true);
+    }, 800);
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
-      <div className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl">
-
-        <div className="flex items-center justify-between">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-5 shadow-2xl sm:p-6"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="rounded-xl bg-slate-800 p-3">
               <FileText size={22} className="text-slate-300" />
             </div>
 
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 className="text-lg font-semibold text-white sm:text-xl">
                 Export Report
               </h2>
 
@@ -47,24 +65,32 @@ export default function ExportReportModal({
           </div>
 
           <button
+            type="button"
             onClick={onClose}
-            className="rounded-lg p-2 text-slate-400 hover:bg-slate-800 hover:text-white"
+            aria-label="Close export modal"
+            className="rounded-lg p-2 text-slate-400 transition hover:bg-slate-800 hover:text-white"
           >
             <X size={20} />
           </button>
         </div>
 
         <div className="mt-6 space-y-5">
-
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
+            <label
+              htmlFor="report-type"
+              className="mb-2 block text-sm font-medium text-slate-300"
+            >
               Report Type
             </label>
 
             <select
+              id="report-type"
               value={reportType}
-              onChange={(e) => setReportType(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none"
+              onChange={(event) => {
+                setReportType(event.target.value);
+                setExported(false);
+              }}
+              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500"
             >
               <option>CPI Airfare Report</option>
               <option>National Index Report</option>
@@ -74,14 +100,21 @@ export default function ExportReportModal({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-300">
+            <label
+              htmlFor="time-range"
+              className="mb-2 block text-sm font-medium text-slate-300"
+            >
               Time Range
             </label>
 
             <select
+              id="time-range"
               value={range}
-              onChange={(e) => setRange(e.target.value)}
-              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-white outline-none"
+              onChange={(event) => {
+                setRange(event.target.value);
+                setExported(false);
+              }}
+              className="w-full rounded-xl border border-slate-700 bg-slate-800 px-4 py-3 text-sm text-white outline-none transition focus:border-slate-500"
             >
               <option value="7d">Last 7 Days</option>
               <option value="30d">Last 30 Days</option>
@@ -89,14 +122,22 @@ export default function ExportReportModal({
             </select>
           </div>
 
+          {exported && (
+            <div className="rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-400">
+              Report export request prepared successfully.
+            </div>
+          )}
+
           <button
+            type="button"
             onClick={handleExport}
-            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-slate-900 transition hover:bg-slate-200"
+            disabled={exporting}
+            className="flex w-full items-center justify-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-slate-900 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:opacity-60"
           >
             <Download size={18} />
-            Export Report
-          </button>
 
+            {exporting ? 'Preparing Report...' : 'Export Report'}
+          </button>
         </div>
       </div>
     </div>
