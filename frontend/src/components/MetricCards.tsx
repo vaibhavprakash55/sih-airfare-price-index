@@ -14,41 +14,43 @@ import { fetchDashboardStats } from '@/services/api';
 
 export default function MetricCards() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
-  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const loadStats = async () => {
-      try {
-        setError('');
+      setLoading(true);
 
-        const data = await fetchDashboardStats();
-        setStats(data);
-      } catch (error) {
-        setError('Unable to load dashboard statistics.');
-      }
+      const data = await fetchDashboardStats();
+
+      setStats(data);
+      setLoading(false);
     };
 
     loadStats();
   }, []);
 
-  if (error) {
-    return (
-      <div className="rounded-2xl border border-red-900/50 bg-slate-900 p-6 text-center">
-        <p className="text-sm text-red-400">
-          {error}
-        </p>
-      </div>
-    );
-  }
-
-  if (!stats) {
+  if (loading || !stats) {
     return (
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[1, 2, 3, 4].map((item) => (
           <div
             key={item}
-            className="h-36 animate-pulse rounded-2xl border border-slate-800 bg-slate-900"
-          />
+            className="rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg"
+          >
+            <div className="flex items-start justify-between">
+              <div className="w-full">
+                <div className="h-4 w-32 animate-pulse rounded bg-slate-800" />
+
+                <div className="mt-4 h-9 w-24 animate-pulse rounded bg-slate-800" />
+              </div>
+
+              <div className="h-11 w-11 animate-pulse rounded-xl bg-slate-800" />
+            </div>
+
+            <div className="mt-6 h-4 w-20 animate-pulse rounded bg-slate-800" />
+
+            <div className="mt-2 h-3 w-28 animate-pulse rounded bg-slate-800" />
+          </div>
         ))}
       </div>
     );
@@ -93,33 +95,33 @@ export default function MetricCards() {
         return (
           <div
             key={card.title}
-            className="group min-w-0 rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg transition duration-200 hover:-translate-y-1 hover:border-slate-600"
+            className="group rounded-2xl border border-slate-800 bg-slate-900 p-5 shadow-lg transition duration-200 hover:-translate-y-1 hover:border-slate-600"
           >
-            <div className="flex items-start justify-between gap-3">
+            <div className="flex items-start justify-between">
               <div className="min-w-0">
-                <p className="truncate text-sm font-medium text-slate-400">
+                <p className="text-sm font-medium text-slate-400">
                   {card.title}
                 </p>
 
-                <h3 className="mt-3 truncate text-2xl font-bold tracking-tight text-white sm:text-3xl">
+                <h3 className="mt-3 text-3xl font-bold tracking-tight text-white">
                   {card.value}
                 </h3>
               </div>
 
-              <div className="shrink-0 rounded-xl bg-slate-800 p-3 transition group-hover:bg-slate-700">
+              <div className="rounded-xl bg-slate-800 p-3 transition group-hover:bg-slate-700">
                 <Icon size={21} className="text-slate-300" />
               </div>
             </div>
 
             <div className="mt-5 flex items-center gap-2">
-              <TrendingUp size={15} className="shrink-0 text-slate-300" />
+              <TrendingUp size={15} className="text-slate-300" />
 
-              <span className="truncate text-sm font-semibold text-slate-200">
+              <span className="text-sm font-semibold text-slate-200">
                 {card.change}
               </span>
             </div>
 
-            <p className="mt-1 truncate text-xs text-slate-500">
+            <p className="mt-1 text-xs text-slate-500">
               {card.description}
             </p>
           </div>
