@@ -9,12 +9,16 @@ import {
   Clock,
   Database,
   CheckCircle2,
-  Check,
+  BarChart3,
+  Route,
+  AlertTriangle,
+  LayoutDashboard,
 } from 'lucide-react';
 
 import MetricCards from '@/components/MetricCards';
 import NationalIndexChart from '@/components/NationalIndexChart';
 import HorizonComparisonChart from '@/components/HorizonComparisonChart';
+import RouteIntelligence from '@/components/RouteIntelligence';
 import SurgeAlertsTable from '@/components/SurgeAlertsTable';
 import ExportReportModal from '@/components/ExportReportModal';
 
@@ -23,9 +27,8 @@ export default function Home() {
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState('');
   const [countdown, setCountdown] = useState(60);
-  const [refreshMessage, setRefreshMessage] = useState(false);
 
-  const updateTime = () => {
+  useEffect(() => {
     setLastUpdated(
       new Date().toLocaleTimeString('en-IN', {
         hour: '2-digit',
@@ -33,10 +36,6 @@ export default function Home() {
         second: '2-digit',
       })
     );
-  };
-
-  useEffect(() => {
-    updateTime();
   }, []);
 
   useEffect(() => {
@@ -56,78 +55,90 @@ export default function Home() {
 
   const handleRefresh = () => {
     setRefreshing(true);
-    setRefreshMessage(false);
+    setCountdown(60);
 
     setTimeout(() => {
-      updateTime();
-      setCountdown(60);
-      setRefreshing(false);
-      setRefreshMessage(true);
-
-      setTimeout(() => {
-        setRefreshMessage(false);
-      }, 3000);
-    }, 800);
+      window.location.reload();
+    }, 500);
   };
 
+  const scrollToSection = (id: string) => {
+    const element = document.getElementById(id);
+
+    if (element) {
+      element.scrollIntoView({
+        behavior: 'smooth',
+        block: 'start',
+      });
+    }
+  };
+
+  const navigationItems = [
+    {
+      id: 'overview',
+      label: 'Overview',
+      icon: LayoutDashboard,
+    },
+    {
+      id: 'national-index',
+      label: 'National Index',
+      icon: BarChart3,
+    },
+    {
+      id: 'route-intelligence',
+      label: 'Routes',
+      icon: Route,
+    },
+    {
+      id: 'surge-alerts',
+      label: 'Alerts',
+      icon: AlertTriangle,
+    },
+  ];
+
   return (
-    <main className="min-h-screen bg-slate-950 p-4 md:p-6">
-      <div className="mx-auto max-w-7xl">
+    <main className="min-h-screen bg-slate-950 p-3 sm:p-4 md:p-6">
+      <div className="mx-auto w-full max-w-7xl">
 
         {/* ================= HEADER ================= */}
 
-        <header className="mb-8 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg">
+        <header className="mb-5 overflow-hidden rounded-2xl border border-slate-800 bg-slate-900 shadow-lg sm:mb-6 md:mb-8">
 
-          {/* Main Header */}
-
-          <div className="flex flex-col gap-6 p-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-5 p-4 sm:gap-6 sm:p-6 lg:flex-row lg:items-center lg:justify-between">
 
             {/* Branding */}
 
-            <div>
-              <div className="flex items-center gap-4">
+            <div className="min-w-0">
+              <div className="flex items-center gap-3 sm:gap-4">
 
-                {/* Logo */}
-
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-800">
-                  <span className="text-2xl">✈</span>
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-slate-700 bg-slate-800 sm:h-12 sm:w-12">
+                  <span className="text-xl sm:text-2xl">✈</span>
                 </div>
 
-                {/* Title */}
-
-                <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white md:text-3xl">
+                <div className="min-w-0">
+                  <h1 className="truncate text-xl font-bold tracking-tight text-white sm:text-2xl md:text-3xl">
                     Airfare Price Intelligence
                   </h1>
 
-                  <p className="mt-1 text-sm text-slate-400">
+                  <p className="mt-1 text-xs text-slate-400 sm:text-sm">
                     Real-time Airfare Price Index • India
                   </p>
                 </div>
 
               </div>
 
-              {/* Status Section */}
-
-              <div className="mt-5 flex flex-wrap items-center gap-3">
-
-                {/* Live Status */}
+              <div className="mt-4 flex flex-wrap items-center gap-2 sm:mt-5 sm:gap-3">
 
                 <div className="flex items-center gap-2 rounded-full border border-green-500/20 bg-green-500/10 px-3 py-1.5">
-
                   <span className="relative flex h-2.5 w-2.5">
                     <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-60" />
-
                     <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-400" />
                   </span>
 
                   <span className="text-xs font-medium text-green-400">
                     Monitoring Active
                   </span>
-
                 </div>
-
-                {/* System Description */}
 
                 <div className="flex items-center gap-2 text-xs text-slate-500">
                   <Activity size={14} />
@@ -142,34 +153,30 @@ export default function Home() {
 
             {/* Header Actions */}
 
-            <div className="flex flex-col gap-3 sm:flex-row">
-
-              {/* Refresh Button */}
+            <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:gap-3">
 
               <button
                 type="button"
                 onClick={handleRefresh}
                 disabled={refreshing}
-                className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-5 py-3 font-semibold text-slate-200 shadow-md transition duration-200 hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
+                className="flex items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800 px-3 py-3 text-sm font-semibold text-slate-200 shadow-md transition duration-200 hover:-translate-y-0.5 hover:border-slate-600 hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60 sm:px-5"
               >
                 <RefreshCw
-                  size={18}
+                  size={17}
                   className={refreshing ? 'animate-spin' : ''}
                 />
 
                 <span>
-                  {refreshing ? 'Refreshing...' : 'Refresh Data'}
+                  {refreshing ? 'Refreshing...' : 'Refresh'}
                 </span>
               </button>
-
-              {/* Export Button */}
 
               <button
                 type="button"
                 onClick={() => setIsExportOpen(true)}
-                className="flex items-center justify-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-slate-900 shadow-md transition duration-200 hover:-translate-y-0.5 hover:bg-slate-200"
+                className="flex items-center justify-center gap-2 rounded-xl bg-white px-3 py-3 text-sm font-semibold text-slate-900 shadow-md transition duration-200 hover:-translate-y-0.5 hover:bg-slate-200 sm:px-5"
               >
-                <Download size={18} />
+                <Download size={17} />
 
                 <span>
                   Export Report
@@ -180,13 +187,11 @@ export default function Home() {
 
           </div>
 
-          {/* ================= INFO BAR ================= */}
+          {/* Info Bar */}
 
-          <div className="border-t border-slate-800 bg-slate-950/40 px-6 py-3">
+          <div className="border-t border-slate-800 bg-slate-950/40 px-4 py-3 sm:px-6">
 
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-xs text-slate-500">
-
-              {/* Coverage */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-xs text-slate-500">
 
               <div className="flex items-center gap-2">
                 <ShieldCheck size={14} />
@@ -196,8 +201,6 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Data Sources */}
-
               <div className="flex items-center gap-2">
                 <Database size={14} />
 
@@ -206,8 +209,6 @@ export default function Home() {
                 </span>
               </div>
 
-              {/* Monitoring */}
-
               <div className="flex items-center gap-2">
                 <CheckCircle2 size={14} />
 
@@ -215,8 +216,6 @@ export default function Home() {
                   Index: Live Monitoring
                 </span>
               </div>
-
-              {/* Last Updated */}
 
               {lastUpdated && (
                 <div className="flex items-center gap-2">
@@ -234,53 +233,73 @@ export default function Home() {
 
         </header>
 
-        {/* ================= REFRESH SUCCESS MESSAGE ================= */}
+        {/* ================= QUICK NAVIGATION ================= */}
 
-        {refreshMessage && (
-          <div className="mb-6 flex items-center gap-3 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3">
+        <nav className="sticky top-2 z-40 mb-5 rounded-2xl border border-slate-800 bg-slate-900/95 p-2 shadow-xl backdrop-blur-md sm:top-3 sm:mb-6">
 
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
-              <Check size={17} className="text-green-400" />
+          <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+
+            <div className="hidden shrink-0 items-center gap-2 px-3 text-xs font-semibold uppercase tracking-wider text-slate-500 lg:flex">
+              <span className="h-2 w-2 rounded-full bg-green-400" />
+              Dashboard
             </div>
 
-            <div>
-              <p className="text-sm font-medium text-green-400">
-                Data refreshed successfully
-              </p>
+            <div className="hidden h-6 w-px bg-slate-800 lg:block" />
 
-              <p className="mt-0.5 text-xs text-slate-500">
-                Latest dashboard information is now available.
-              </p>
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+
+              return (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => scrollToSection(item.id)}
+                  className="flex min-w-0 flex-1 items-center justify-center gap-1.5 rounded-xl border border-transparent px-2 py-2.5 text-xs font-medium text-slate-400 transition duration-200 hover:border-slate-700 hover:bg-slate-800 hover:text-white sm:flex-none sm:gap-2 sm:px-4 sm:text-sm"
+                >
+                  <Icon size={15} />
+
+                  <span className="truncate">
+                    {item.label}
+                  </span>
+                </button>
+              );
+            })}
+
+            <div className="hidden items-center gap-2 rounded-xl border border-slate-800 bg-slate-950/60 px-3 py-2 text-xs text-slate-500 lg:flex">
+              <span className="h-1.5 w-1.5 rounded-full bg-green-400" />
+
+              <span>
+                Auto-refresh {countdown}s
+              </span>
             </div>
 
           </div>
-        )}
+
+        </nav>
 
         {/* ================= LIVE UPDATE BAR ================= */}
 
-        <div className="mb-6 flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="mb-5 flex flex-col gap-3 rounded-xl border border-slate-800 bg-slate-900/60 px-4 py-3 sm:mb-6 sm:flex-row sm:items-center sm:justify-between">
 
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
 
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-green-500/10">
+            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-green-500/10">
               <Activity size={16} className="text-green-400" />
             </div>
 
-            <div>
+            <div className="min-w-0">
               <p className="text-sm font-medium text-slate-200">
                 Live Monitoring
               </p>
 
-              <p className="text-xs text-slate-500">
+              <p className="truncate text-xs text-slate-500">
                 Dashboard connected to airfare intelligence services
               </p>
             </div>
 
           </div>
 
-          {/* Auto Refresh Status */}
-
-          <div className="flex items-center gap-3 text-xs text-slate-400">
+          <div className="flex shrink-0 items-center gap-2 text-xs text-slate-400">
 
             <span className="h-2 w-2 rounded-full bg-green-400" />
 
@@ -292,23 +311,127 @@ export default function Home() {
 
         </div>
 
-        {/* ================= DASHBOARD ================= */}
+        {/* ================= OVERVIEW ================= */}
 
-        {/* Key Metrics */}
+        <section
+          id="overview"
+          className="scroll-mt-24"
+        >
 
-        <MetricCards />
+          <div className="mb-4 flex items-end justify-between gap-4">
 
-        {/* National Index */}
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                System Overview
+              </p>
 
-        <NationalIndexChart />
+              <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
+                National Airfare Snapshot
+              </h2>
+            </div>
 
-        {/* Booking Horizon */}
+            <div className="hidden items-center gap-2 text-xs text-slate-500 sm:flex">
+              <Activity size={14} />
+              Live intelligence
+            </div>
 
-        <HorizonComparisonChart />
+          </div>
 
-        {/* Surge Alerts */}
+          <MetricCards />
 
-        <SurgeAlertsTable />
+        </section>
+
+        {/* ================= NATIONAL INDEX ================= */}
+
+        <section
+          id="national-index"
+          className="scroll-mt-24"
+        >
+
+          <div className="mb-4 mt-7 flex items-end justify-between gap-4 sm:mt-8">
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Market Movement
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
+                National Airfare Price Index
+              </h2>
+            </div>
+
+            <div className="hidden items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-500 md:flex">
+              <BarChart3 size={14} />
+              Historical trend
+            </div>
+
+          </div>
+
+          <NationalIndexChart />
+
+          <HorizonComparisonChart />
+
+        </section>
+
+        {/* ================= ROUTE INTELLIGENCE ================= */}
+
+        <section
+          id="route-intelligence"
+          className="scroll-mt-24"
+        >
+
+          <div className="mb-4 mt-7 flex items-end justify-between gap-4 sm:mt-8">
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Route Analytics
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
+                Route Intelligence
+              </h2>
+            </div>
+
+            <div className="hidden items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-500 md:flex">
+              <Route size={14} />
+              Domestic city-pairs
+            </div>
+
+          </div>
+
+          <RouteIntelligence />
+
+        </section>
+
+        {/* ================= SURGE ALERTS ================= */}
+
+        <section
+          id="surge-alerts"
+          className="scroll-mt-24"
+        >
+
+          <div className="mb-4 mt-7 flex items-end justify-between gap-4 sm:mt-8">
+
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                Anomaly Detection
+              </p>
+
+              <h2 className="mt-1 text-lg font-bold text-white sm:text-xl">
+                Airfare Surge Alerts
+              </h2>
+            </div>
+
+            <div className="hidden items-center gap-2 rounded-lg border border-slate-800 bg-slate-900 px-3 py-2 text-xs text-slate-500 md:flex">
+              <AlertTriangle size={14} />
+              Requires attention
+            </div>
+
+          </div>
+
+          <SurgeAlertsTable />
+
+        </section>
 
         {/* ================= EXPORT MODAL ================= */}
 
@@ -319,7 +442,7 @@ export default function Home() {
 
         {/* ================= FOOTER ================= */}
 
-        <footer className="mt-8 border-t border-slate-800 pt-6 pb-4">
+        <footer className="mt-8 border-t border-slate-800 pt-6 pb-4 sm:mt-10">
 
           <div className="flex flex-col gap-3 text-center sm:flex-row sm:items-center sm:justify-between sm:text-left">
 
@@ -334,11 +457,13 @@ export default function Home() {
             </div>
 
             <div className="flex items-center justify-center gap-2 text-xs text-green-400 sm:justify-end">
+
               <span className="h-2 w-2 rounded-full bg-green-400" />
 
               <span>
                 System Operational
               </span>
+
             </div>
 
           </div>
